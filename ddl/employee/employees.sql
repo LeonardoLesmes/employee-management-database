@@ -1,0 +1,12 @@
+CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    department VARCHAR(50) NOT NULL,
+    role_id INTEGER REFERENCES roles(id),
+    status VARCHAR(20) DEFAULT 'pending' 
+        CHECK (status IN ('pending', 'approved', 'rejected')),
+    assigned_by INTEGER REFERENCES employees(id),
+    role_assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
