@@ -1,3 +1,27 @@
+CREATE TABLE manager_roles (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE managers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    role_id INTEGER REFERENCES manager_roles(id),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE managers_credentials (
+    id SERIAL PRIMARY KEY,
+    manager_id INTEGER NOT NULL REFERENCES managers(id) UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    last_login TIMESTAMP,    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE roles (
     id SERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE,
@@ -13,19 +37,10 @@ CREATE TABLE employees (
     role_id INTEGER REFERENCES roles(id),
     status VARCHAR(20) DEFAULT 'PENDING' 
         CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'CANCELED')),
-    assigned_by INTEGER REFERENCES employees(id),
-    role_assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE employee_credentials (
-    id SERIAL PRIMARY KEY,
-    employee_id INTEGER NOT NULL REFERENCES employees(id) UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    last_login TIMESTAMP,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    assigned_by INTEGER NOT NULL,
+    approved_by INTEGER,
+    resolution_date TIMESTAMP,
 );
 
 CREATE TABLE systems (
@@ -42,8 +57,9 @@ CREATE TABLE access_requests (
     status VARCHAR(20) DEFAULT 'PENDING'
        CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'CANCELED')),
     request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    assigned_by INTEGER,
+    approved_by INTEGER,
     resolution_date TIMESTAMP,
-    assigned_by INTEGER REFERENCES employees(id),
     UNIQUE(employee_id, system_id)
 );
 
@@ -63,9 +79,8 @@ CREATE TABLE computer_assignments (
     status VARCHAR(20) DEFAULT 'PENDING'
         CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'CANCELED')),
     request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    assigned_by INTEGER,
+    approved_by INTEGER,
     resolution_date TIMESTAMP,
-    assignment_date TIMESTAMP,
-    return_date TIMESTAMP,
-    assigned_by INTEGER REFERENCES employees(id),
-    UNIQUE(computer_id, return_date)
+    UNIQUE(computer_id)
 );

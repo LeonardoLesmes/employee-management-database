@@ -1,4 +1,4 @@
-CREATE DATABASE "kata-database"
+CREATE DATABASE "employee-management"
     WITH
     OWNER = postgres
     ENCODING = 'UTF8'
