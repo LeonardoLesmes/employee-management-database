@@ -103,9 +103,9 @@ CREATE UNIQUE INDEX unique_active_access_request
 ON access_requests (employee_id, system_id) 
 WHERE status IN ('PENDING', 'APPROVED');
 
--- Solo una asignación activa por computadora
+-- Solo una asignación activa por empleado
 CREATE UNIQUE INDEX unique_active_computer_assignment 
-ON computer_assignments (computer_id) 
+ON computer_assignments (employee_id) 
 WHERE status IN ('PENDING', 'APPROVED');
 ```
 
