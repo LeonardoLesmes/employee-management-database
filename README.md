@@ -7,7 +7,9 @@ Este proyecto implementa un sistema de gestión de colaboradores con tres módul
 - **Solicitud de accesos**: Gestión de permisos a sistemas corporativos
 - **Asignación de equipos**: Control de inventario y asignación de computadores
 
-La base de datos está diseñada para **PostgreSQL** utilizando arquitectura hexagonal con separación clara de responsabilidades.
+Además implementa un sistema de autenticación de managers los cuales se encargan de la gestion, modificacion, rechazo y aprobacion de las solicitudes de los colaboradores.
+
+La base de datos está diseñada para **PostgreSQL**.
 
 ## 🗄️ Base de Datos
 
@@ -18,58 +20,98 @@ La base de datos está diseñada para **PostgreSQL** utilizando arquitectura hex
 
 ## 🔗 Relaciones Detalladas
 
-### 1. **Roles → Empleados** (One-to-Many)
+### 🔄 Relaciones Específicas
+
+#### 1. **Sistema de Gestión de Managers**
 ```sql
+-- Managers → Manager Roles (Many-to-One)
+managers.role_id → manager_roles.id
+```
+- Un rol de manager puede ser asignado a múltiples managers
+- Cada manager tiene exactamente un rol específico
+- Roles como: LEADER, IT, etc.
+
+```sql
+-- Managers → Credentials (One-to-One)
+managers_credentials.manager_id → managers.id (UNIQUE)
+```
+- Cada manager tiene exactamente una entrada de credenciales
+- Relación obligatoria para autenticación de directivos
+
+#### 2. **Sistema de Empleados**
+```sql
+-- Employees → Roles (Many-to-One)
 employees.role_id → roles.id
 ```
 - Un rol puede ser asignado a múltiples empleados
-- Cada empleado tiene exactamente un rol
+- Cada empleado tiene exactamente un rol funcional
+- Roles como: DEV_JUNIOR, QA_ANALYST, PROJECT_MANAGER, etc.
 
-### 2. **Empleados → Credenciales** (One-to-One)
+#### 3. **Solicitudes de Acceso a Sistemas**
 ```sql
-employee_credentials.employee_id → employees.id (UNIQUE)
-```
-- Cada empleado tiene exactamente una entrada de credenciales
-- Relación obligatoria para autenticación
-
-### 3. **Empleados → Solicitudes de Acceso** (One-to-Many)
-```sql
+-- Employees → Access Requests (One-to-Many)
 access_requests.employee_id → employees.id
-```
-- Un empleado puede tener múltiples solicitudes de acceso
-- Cada solicitud pertenece a un solo empleado
 
-### 4. **Sistemas → Solicitudes de Acceso** (One-to-Many)
-```sql
+-- Systems → Access Requests (One-to-Many)
 access_requests.system_id → systems.id
 ```
+- Un empleado puede tener múltiples solicitudes de acceso (historial)
 - Un sistema puede tener múltiples solicitudes
-- Cada solicitud es para un sistema específico
+- **Constraint especial**: Solo una solicitud activa por empleado-sistema
 
-### 5. **Empleados → Asignaciones de Computadores** (One-to-Many)
+#### 4. **Asignaciones de Computadoras**
 ```sql
+-- Employees → Computer Assignments (One-to-Many)
 computer_assignments.employee_id → employees.id
+
+-- Computers → Computer Assignments (One-to-Many)
+computer_assignments.computer_id → computers.id
 ```
 - Un empleado puede tener múltiples asignaciones (histórico)
-- Permite tracking completo de equipos asignados
+- Una computadora puede tener múltiples asignaciones (historial)
+- **Constraint especial**: Solo una asignación activa por computadora
 
-## 🔑 Estados del Sistema
+#### 5. **Auditoría y Tracking**
+- Tracking completo de quién realiza las acciones
+- Separación entre quien asigna y quien aprueba
+- Auditoría completa de decisiones
 
-### Estados de Empleados
-- `PENDING`: Esperando aprobación
+### 🔑 Estados del Sistema
+
+#### Estados de Empleados
+- `PENDING`: Esperando aprobación del manager
 - `APPROVED`: Empleado aprobado y activo
 - `REJECTED`: Solicitud de empleado rechazada
 - `CANCELED`: Solicitud cancelada
 
-### Estados de Solicitudes/Asignaciones
+#### Estados de Solicitudes/Asignaciones
 - `PENDING`: En espera de aprobación
 - `APPROVED`: Aprobado y activo
-- `REJECTED`: Rechazado
-- `CANCELED`: Cancelado
+- `REJECTED`: Rechazado (permite nueva solicitud)
+- `CANCELED`: Cancelado (permite nueva solicitud)
 
-### Estados de Computadores
+#### Estados de Computadoras
 - `AVAILABLE`: Disponible para asignación
-- `ASSIGNED`: Actualmente asignado
+- `ASSIGNED`: Actualmente asignada a un empleado
+- `IN_PROCESS`: En proceso de configuración/mantenimiento
+
+### 🔒 Constraints Únicos Parciales
+
+```sql
+-- Solo una solicitud activa por empleado-sistema
+CREATE UNIQUE INDEX unique_active_access_request 
+ON access_requests (employee_id, system_id) 
+WHERE status IN ('PENDING', 'APPROVED');
+
+-- Solo una asignación activa por computadora
+CREATE UNIQUE INDEX unique_active_computer_assignment 
+ON computer_assignments (computer_id) 
+WHERE status IN ('PENDING', 'APPROVED');
+```
+
+Estos constraints permiten:
+- ✅ Nuevas solicitudes cuando las anteriores fueron `REJECTED` o `CANCELED`
+- ❌ Solicitudes duplicadas con estado `PENDING` o `APPROVED`
 
 ## 🛠️ Instalación y Configuración
 
@@ -149,19 +191,19 @@ LEFT JOIN employee_credentials ec ON e.id = ec.employee_id
 WHERE e.email = 'admin@empresa.com';
 ```
 
+Para insertar las credenciales del usuario ADMIN o cualquier otro manager hacerlo mediante el recurso expuesto en el backend.
+
 ## 📁 Estructura del Proyecto
 
 ```
 employee-management-database/
 ├── README.md                    # Este archivo
 ├── schema.dbml                  # Schema para dbdiagram.io
+├── schema.png                  # Schema de la base de datos
 ├── ddl/                        # Data Definition Language
 │   ├── create-all-tables.sql   # Script completo de creación
 │   ├── create-database.sql     # Creación de BD
-│   ├── employee/              # Tablas de empleados
-│   ├── access-request/        # Tablas de solicitudes
-│   ├── computer/             # Tablas de computadores
-│   └── index/                # Índices de optimización
+│   │
 └── dml/                       # Data Manipulation Language
     ├── employee/             # Datos iniciales empleados
     ├── access-request/       # Datos iniciales sistemas
