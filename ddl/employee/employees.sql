@@ -4,8 +4,8 @@ CREATE TABLE employees (
     email VARCHAR(100) UNIQUE NOT NULL,
     department VARCHAR(50) NOT NULL,
     role_id INTEGER REFERENCES roles(id),
-    status VARCHAR(20) DEFAULT 'pending' 
-        CHECK (status IN ('pending', 'approved', 'rejected')),
+    status VARCHAR(20) DEFAULT 'PENDING' 
+        CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'CANCELED')),
     assigned_by INTEGER REFERENCES employees(id),
     role_assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
