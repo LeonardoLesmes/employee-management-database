@@ -88,5 +88,5 @@ ON access_requests (employee_id, system_id)
 WHERE status IN ('PENDING', 'APPROVED');
 
 CREATE UNIQUE INDEX unique_active_computer_assignment 
-ON computer_assignments (computer_id) 
+ON computer_assignments (employee_id) 
 WHERE status IN ('PENDING', 'APPROVED');
