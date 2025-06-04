@@ -59,8 +59,7 @@ CREATE TABLE access_requests (
     request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     assigned_by INTEGER,
     approved_by INTEGER,
-    resolution_date TIMESTAMP,
-    UNIQUE(employee_id, system_id)
+    resolution_date TIMESTAMP
 );
 
 CREATE TABLE computers (
@@ -68,7 +67,7 @@ CREATE TABLE computers (
     model VARCHAR(100) NOT NULL,
     serial_number VARCHAR(50) UNIQUE NOT NULL,
     status VARCHAR(20) DEFAULT 'AVAILABLE'
-        CHECK (status IN ('AVAILABLE', 'ASSIGNED')),
+        CHECK (status IN ('AVAILABLE', 'ASSIGNED', 'IN_PROCESS')),
     specs TEXT
 );
 
@@ -81,6 +80,13 @@ CREATE TABLE computer_assignments (
     request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     assigned_by INTEGER,
     approved_by INTEGER,
-    resolution_date TIMESTAMP,
-    UNIQUE(computer_id)
+    resolution_date TIMESTAMP
 );
+
+CREATE UNIQUE INDEX unique_active_access_request 
+ON access_requests (employee_id, system_id) 
+WHERE status IN ('PENDING', 'APPROVED');
+
+CREATE UNIQUE INDEX unique_active_computer_assignment 
+ON computer_assignments (computer_id) 
+WHERE status IN ('PENDING', 'APPROVED');

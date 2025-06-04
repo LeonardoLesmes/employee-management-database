@@ -104,4 +104,5 @@ Enum request_status {
 Enum computer_status {
   AVAILABLE
   ASSIGNED
+  IN_PROCESS
 }
